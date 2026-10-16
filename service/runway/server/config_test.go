@@ -605,7 +605,6 @@ func TestLoadMergeConfig_GitHubDurationAndHostValidation(t *testing.T) {
 		{name: "negative httpTimeout", extra: "    httpTimeout: -1s\n", wantErr: true},
 		{name: "negative pollInterval", extra: "    pollInterval: -1s\n", wantErr: true},
 		{name: "negative maxPollDuration", extra: "    maxPollDuration: -1m\n", wantErr: true},
-		{name: "uppercase host", extra: "    host: GitHub.com\n", wantErr: true},
 		{name: "host with scheme", extra: "    host: https://github.com\n", wantErr: true},
 		{name: "host with path", extra: "    host: github.com/path\n", wantErr: true},
 	}

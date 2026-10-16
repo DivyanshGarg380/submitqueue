@@ -283,9 +283,9 @@ func (m *mergerConfig) normalizeAndValidateGitHub(where string) error {
 	if m.Host == "" {
 		m.Host = defaultGitHubHost
 	}
-	if m.Host != strings.ToLower(m.Host) || strings.ContainsAny(m.Host, "/ \t") {
+	if strings.ContainsAny(m.Host, "/ \t") {
 		return fmt.Errorf(
-			"%s: github merger host %q must be a lowercase host[:port] such as %q, without scheme or path",
+			"%s: github merger host %q must be a host[:port] such as %q, without scheme or path",
 			where,
 			m.Host,
 			defaultGitHubHost,
