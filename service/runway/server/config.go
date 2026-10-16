@@ -283,6 +283,14 @@ func (m *mergerConfig) normalizeAndValidateGitHub(where string) error {
 	if m.Host == "" {
 		m.Host = defaultGitHubHost
 	}
+	if m.Host != strings.ToLower(m.Host) || strings.ContainsAny(m.Host, "/ \t") {
+		return fmt.Errorf(
+			"%s: github merger host %q must be a lowercase host[:port] such as %q, without scheme or path",
+			where,
+			m.Host,
+			defaultGitHubHost,
+		)
+	}
 	if m.Target == "" {
 		m.Target = "main"
 	}
@@ -306,7 +314,15 @@ func parseOptionalDuration(v string) (time.Duration, error) {
 	if v == "" {
 		return 0, nil
 	}
-	return time.ParseDuration(v)
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return 0, err
+	}
+	if d < 0 {
+		return 0, fmt.Errorf("duration %q must not be negative", v)
+	}
+
+	return d, nil
 }
 
 // firstDifference reports the first field in which two git mergers disagree,

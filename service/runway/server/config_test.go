@@ -592,3 +592,36 @@ func TestMergerConfig_Provisions(t *testing.T) {
 	owned := mergerConfig{Type: mergerTypeGit, CheckoutPath: "/var/checkouts/r", RemoteURL: "https://example.com/o/r.git"}
 	assert.True(t, owned.provisions())
 }
+
+func TestLoadMergeConfig_GitHubDurationAndHostValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		extra   string
+		wantErr bool
+	}{
+		{name: "defaults", extra: ""},
+		{name: "valid durations", extra: "    httpTimeout: 30s\n    pollInterval: 2s\n    maxPollDuration: 5m\n"},
+		{name: "host with port", extra: "    host: ghe.example.com:8443\n"},
+		{name: "negative httpTimeout", extra: "    httpTimeout: -1s\n", wantErr: true},
+		{name: "negative pollInterval", extra: "    pollInterval: -1s\n", wantErr: true},
+		{name: "negative maxPollDuration", extra: "    maxPollDuration: -1m\n", wantErr: true},
+		{name: "uppercase host", extra: "    host: GitHub.com\n", wantErr: true},
+		{name: "host with scheme", extra: "    host: https://github.com\n", wantErr: true},
+		{name: "host with path", extra: "    host: github.com/path\n", wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "merge.yaml")
+			yaml := "defaults:\n  merger:\n    type: github\n    owner: uber\n    repo: submitqueue\n" + tt.extra
+			require.NoError(t, os.WriteFile(path, []byte(yaml), 0o600))
+
+			_, err := loadMergeConfig(path)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
