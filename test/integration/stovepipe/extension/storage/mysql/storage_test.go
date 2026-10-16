@@ -54,6 +54,16 @@ func TestMySQLStorage(t *testing.T) {
 	require.NoError(t, err, "failed to create storage")
 	factory := mysqlFactory{backend: backend}
 
+	t.Run("QueueSummaryStores", func(t *testing.T) {
+		resetStorage(t, db)
+		testQueueSummaryStores(t, ctx, backend)
+	})
+
+	t.Run("QueueSummaryKeyIsolation", func(t *testing.T) {
+		resetStorage(t, db)
+		testQueueSummaryKeyIsolation(t, ctx, backend)
+	})
+
 	t.Run("RequestStore", func(t *testing.T) {
 		resetStorage(t, db)
 		bound, err := backend.For("monorepo/main")
@@ -128,6 +138,8 @@ func resetStorage(t *testing.T, db *sql.DB) {
 	t.Helper()
 
 	for _, statement := range []string{
+		"TRUNCATE TABLE queue_log",
+		"TRUNCATE TABLE queue_summary",
 		"TRUNCATE TABLE request_log",
 		"TRUNCATE TABLE request_summary",
 		"TRUNCATE TABLE request_acceptance",
