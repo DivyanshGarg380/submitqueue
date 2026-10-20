@@ -45,7 +45,7 @@ func NewPathBuildStore(db *sql.DB, scope tally.Scope, queue string) storage.Path
 // been recorded for it.
 func (s *pathBuildStore) Get(ctx context.Context, pathID string, attempt int) (ret entity.PathBuild, retErr error) {
 	op := metrics.Begin(s.scope, "get", metrics.StorageLatencyBuckets)
-	defer func() { op.Complete(retErr) }()
+	defer func() { storage.CompleteReadMetricsOp(op, retErr) }()
 
 	var pathBuild entity.PathBuild
 

@@ -76,7 +76,7 @@ func (r *requestReceiptStore) Create(ctx context.Context, receipt entity.Request
 
 func (r *requestReceiptStore) List(ctx context.Context, bounds storage.RequestReceiptRange) (ret []entity.RequestReceipt, retErr error) {
 	op := metrics.Begin(r.scope, "list", metrics.StorageLatencyBuckets)
-	defer func() { op.Complete(retErr) }()
+	defer func() { storage.CompleteReadMetricsOp(op, retErr) }()
 
 	if err := validateRequestReceiptRange(bounds); err != nil {
 		return nil, err

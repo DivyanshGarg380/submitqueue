@@ -44,7 +44,7 @@ func NewQueueBatchStateStore(db *sql.DB, scope tally.Scope, queue string) storag
 // PK-prefix scan.
 func (s *queueBatchStateStore) List(ctx context.Context, state entity.BatchState) (ret []entity.QueueBatchState, retErr error) {
 	op := metrics.Begin(s.scope, "list", metrics.StorageLatencyBuckets)
-	defer func() { op.Complete(retErr) }()
+	defer func() { storage.CompleteReadMetricsOp(op, retErr) }()
 
 	queue := s.queue
 	const query = "SELECT queue, state, batch_id FROM queue_batch_state WHERE queue = ? AND state = ?"

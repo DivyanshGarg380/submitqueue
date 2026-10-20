@@ -45,7 +45,7 @@ func NewRequestStore(db *sql.DB, scope tally.Scope, queue string) storage.Reques
 // Get retrieves a land request by ID. Returns ErrNotFound if the request is not found.
 func (r *requestStore) Get(ctx context.Context, id string) (ret entity.Request, retErr error) {
 	op := metrics.Begin(r.scope, "get", metrics.StorageLatencyBuckets)
-	defer func() { op.Complete(retErr) }()
+	defer func() { storage.CompleteReadMetricsOp(op, retErr) }()
 
 	var req entity.Request
 	var changeURIsJSON []byte

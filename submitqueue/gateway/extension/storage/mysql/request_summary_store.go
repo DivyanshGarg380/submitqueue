@@ -78,7 +78,7 @@ func (s *requestSummaryStore) Create(ctx context.Context, summary entity.Request
 
 func (s *requestSummaryStore) Get(ctx context.Context, requestID string) (ret entity.RequestSummary, retErr error) {
 	op := metrics.Begin(s.scope, "get", metrics.StorageLatencyBuckets)
-	defer func() { op.Complete(retErr) }()
+	defer func() { storage.CompleteReadMetricsOp(op, retErr) }()
 
 	var changeURIsJSON []byte
 	var metadataJSON []byte

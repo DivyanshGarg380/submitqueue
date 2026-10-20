@@ -44,7 +44,7 @@ func NewBuildStore(db *sql.DB, scope tally.Scope, queue string) storage.BuildSto
 // Get retrieves a build by ID. Returns ErrNotFound if the build is not found.
 func (s *buildStore) Get(ctx context.Context, id string) (ret entity.Build, retErr error) {
 	op := metrics.Begin(s.scope, "get", metrics.StorageLatencyBuckets)
-	defer func() { op.Complete(retErr) }()
+	defer func() { storage.CompleteReadMetricsOp(op, retErr) }()
 
 	var build entity.Build
 

@@ -45,7 +45,7 @@ func NewBatchDependentStore(db *sql.DB, scope tally.Scope, queue string) storage
 // Get retrieves the batch dependent by batch ID. Returns ErrNotFound if the batch dependent is not found.
 func (s *batchDependentStore) Get(ctx context.Context, batchID string) (ret entity.BatchDependent, retErr error) {
 	op := metrics.Begin(s.scope, "get", metrics.StorageLatencyBuckets)
-	defer func() { op.Complete(retErr) }()
+	defer func() { storage.CompleteReadMetricsOp(op, retErr) }()
 
 	var bd entity.BatchDependent
 	var dependentsJSON []byte

@@ -45,7 +45,7 @@ func NewBatchStore(db *sql.DB, scope tally.Scope, queue string) storage.BatchSto
 // Get retrieves a batch by ID. Returns ErrNotFound if the batch is not found.
 func (s *batchStore) Get(ctx context.Context, id string) (ret entity.Batch, retErr error) {
 	op := metrics.Begin(s.scope, "get", metrics.StorageLatencyBuckets)
-	defer func() { op.Complete(retErr) }()
+	defer func() { storage.CompleteReadMetricsOp(op, retErr) }()
 
 	var batch entity.Batch
 	var containsJSON []byte

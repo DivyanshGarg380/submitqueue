@@ -46,7 +46,7 @@ func NewSpeculationPathSetStore(db *sql.DB, scope tally.Scope, queue string) sto
 // Returns ErrNotFound if the head has no set.
 func (s *speculationPathSetStore) Get(ctx context.Context, head string) (ret entity.SpeculationPathSet, retErr error) {
 	op := metrics.Begin(s.scope, "get", metrics.StorageLatencyBuckets)
-	defer func() { op.Complete(retErr) }()
+	defer func() { storage.CompleteReadMetricsOp(op, retErr) }()
 
 	var set entity.SpeculationPathSet
 	var pathsJSON []byte

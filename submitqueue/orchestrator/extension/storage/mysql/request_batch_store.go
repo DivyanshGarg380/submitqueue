@@ -43,7 +43,7 @@ func NewRequestBatchStore(db *sql.DB, scope tally.Scope, queue string) storage.R
 
 func (s *requestBatchStore) GetByRequestID(ctx context.Context, requestID string) (ret []entity.RequestBatch, retErr error) {
 	op := metrics.Begin(s.scope, "get_by_request_id", metrics.StorageLatencyBuckets)
-	defer func() { op.Complete(retErr) }()
+	defer func() { storage.CompleteReadMetricsOp(op, retErr) }()
 
 	rows, err := s.db.QueryContext(ctx,
 		"SELECT request_id, batch_id, version FROM request_batch WHERE queue = ? AND request_id = ? ORDER BY batch_id",

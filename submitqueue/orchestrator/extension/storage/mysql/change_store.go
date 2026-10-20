@@ -70,7 +70,7 @@ func (s *changeStore) Create(ctx context.Context, record entity.ChangeRecord) (r
 // PK-prefix scan.
 func (s *changeStore) GetByURI(ctx context.Context, uri string) (ret []entity.ChangeRecord, retErr error) {
 	op := metrics.Begin(s.scope, "get_by_uri", metrics.StorageLatencyBuckets)
-	defer func() { op.Complete(retErr) }()
+	defer func() { storage.CompleteReadMetricsOp(op, retErr) }()
 
 	queue := s.queue
 	const query = "SELECT uri, request_id, queue, details, created_at, updated_at, version FROM `change` WHERE queue = ? AND uri = ?"
