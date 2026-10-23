@@ -143,7 +143,8 @@ func (c *projectStatusController) GetProjectStatus(ctx context.Context, req enti
 		return entity.GetProjectStatusResult{}, &ProjectStatusConsistencyError{message: "project status selector disagrees with stored request summary"}
 	}
 	result.RequestSummary = requestSummary
-	result.UpdatedAtMs = requestSummary.StateTimestampMs
+	result.ProjectResultsComplete = requestSummary.ProjectResultsCompletedAtMs > 0
+	result.UpdatedAtMs = max(requestSummary.StateTimestampMs, requestSummary.ProjectResultsCompletedAtMs)
 	factStore := store.GetValidationFactStore()
 	fact, err := factStore.Get(ctx, requestSummary.URI, "")
 	if err != nil {

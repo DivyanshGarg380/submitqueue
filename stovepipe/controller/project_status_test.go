@@ -590,3 +590,66 @@ func TestGetProjectStatusRejectsInconsistentRequest(t *testing.T) {
 	assert.True(t, IsProjectStatusConsistency(err))
 	assert.False(t, errors.Is(err, storage.ErrNotFound))
 }
+
+func TestGetProjectStatusCompletion(t *testing.T) {
+	for _, tt := range []struct {
+		name        string
+		completedAt int64
+		stateAt     int64
+		empty       bool
+		updatedAt   int64
+	}{
+		{name: "terminal request still recording", stateAt: 10, updatedAt: 20},
+		{name: "completed projects", completedAt: 30, stateAt: 10, updatedAt: 30},
+		{name: "completed empty set", completedAt: 30, stateAt: 10, empty: true, updatedAt: 30},
+		{name: "newer lifecycle timestamp", completedAt: 30, stateAt: 40, updatedAt: 40},
+		{name: "newer fact timestamp", completedAt: 15, stateAt: 10, updatedAt: 20},
+	} {
+		for _, byURI := range []bool{false, true} {
+			selector := "ID"
+			if byURI {
+				selector = "URI"
+			}
+			t.Run(tt.name+"/"+selector, func(t *testing.T) {
+				ctrl := gomock.NewController(t)
+				factory := storagemock.NewMockFactory(ctrl)
+				store := storagemock.NewMockStorage(ctrl)
+				summaries := storagemock.NewMockRequestSummaryStore(ctrl)
+				facts := storagemock.NewMockValidationFactStore(ctrl)
+				summary := entity.RequestSummary{
+					Queue: projectStatusQueue, RequestID: projectStatusID, URI: projectStatusURI,
+					State: entity.RequestStateFailed, StateTimestampMs: tt.stateAt,
+					ProjectResultsCompletedAtMs: tt.completedAt,
+				}
+				factory.EXPECT().For(storage.Config{QueueName: projectStatusQueue}).Return(store, nil)
+				req := entity.GetProjectStatusRequest{Queue: projectStatusQueue, RequestID: projectStatusID, Projects: []string{"p", "missing"}, PageSize: 1}
+				if byURI {
+					req.RequestID = ""
+					req.ChangeURI = projectStatusURI
+					uris := storagemock.NewMockRequestURIStore(ctrl)
+					store.EXPECT().GetRequestURIStore().Return(uris)
+					uris.EXPECT().GetIDByURI(gomock.Any(), projectStatusURI).Return(projectStatusID, nil)
+				}
+				store.EXPECT().GetRequestSummaryStore().Return(summaries)
+				readSummary := summaries.EXPECT().Get(gomock.Any(), projectStatusID).Return(summary, nil)
+				store.EXPECT().GetValidationFactStore().Return(facts).After(readSummary)
+				facts.EXPECT().Get(gomock.Any(), projectStatusURI, "").Return(entity.ValidationFact{}, storage.ErrNotFound)
+				if tt.empty {
+					facts.EXPECT().Get(gomock.Any(), projectStatusURI, "p").Return(entity.ValidationFact{}, storage.ErrNotFound)
+				} else {
+					facts.EXPECT().Get(gomock.Any(), projectStatusURI, "p").Return(entity.ValidationFact{URI: projectStatusURI, RequestID: projectStatusID, Project: "p", Degree: 1, CreatedAt: 20}, nil)
+				}
+				result, err := NewProjectStatusController(zap.NewNop().Sugar(), tally.NoopScope, factory).GetProjectStatus(context.Background(), req)
+				require.NoError(t, err)
+				assert.Equal(t, tt.completedAt > 0, result.ProjectResultsComplete)
+				assert.Equal(t, tt.updatedAt, result.UpdatedAtMs)
+				if tt.empty {
+					assert.Empty(t, result.ProjectValidationFacts)
+				} else {
+					assert.Len(t, result.ProjectValidationFacts, 1)
+				}
+				assert.NotEmpty(t, result.NextPageToken)
+			})
+		}
+	}
+}

@@ -226,9 +226,6 @@ func (c *Controller) persistProjectFacts(ctx context.Context, store storage.Stor
 			return fmt.Errorf("failed to index project fact for request %q and project %q: %w", request.ID, fact.Project, err)
 		}
 	}
-	if len(results) == 0 {
-		return nil
-	}
 	return c.persistProjectFactsRecordedLog(ctx, store, request, len(results))
 }
 
