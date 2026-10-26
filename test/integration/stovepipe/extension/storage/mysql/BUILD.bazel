@@ -7,6 +7,7 @@ go_test(
         "build_issue_test.go",
         "build_issue_update_test.go",
         "issue_log_test.go",
+        "issue_tracking_test.go",
         "open_issue_list_test.go",
         "open_issue_test.go",
         "project_fact_by_degree_test.go",
