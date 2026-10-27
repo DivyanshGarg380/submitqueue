@@ -22,6 +22,8 @@ The post-read cursor write and processed-build updates, including unchanged stat
 
 Every pass starts in `refreshing`, applying the build's accumulated issues in primary-key order. Reported issues are opened or kept open; nothing is closed. A terminal notification retains `Finalize = true` in the progress record, so a replacement worker can distinguish terminal work from an ordinary refresh even when helping it through another notification. Encountering a task-wide issue (empty unit ID) sets `HasTaskWideIssues` in that same versioned record. This fact remains set across batches and retries, including when the issue was already applied by an earlier pass.
 
+Once the entire build-issue range is exhausted, an opening pass with a nonempty task cursor publishes a build-scoped repair request before saving its next phase. Empty passes and closing sweeps do not publish. Publication failures leave the pass active so retries repeat the handoff after ensuring issue state and history are durable. The repair message identity combines the build and persisted pass notification IDs: retries share an identity, while later passes can trigger another evaluation. The fix controller selects an eligible issue and submits at most one repair per build.
+
 Once the entire build-issue range is exhausted:
 
 - An ordinary refresh becomes `refreshed`.
@@ -42,7 +44,7 @@ Build IDs are opaque; source order comes from Request IDs. All scans are bounded
 
 ## Recovery and activation
 
-An error returns to normal consumer retry. The next delivery resumes the cursor before advancing. Permanently failing cursor work blocks issue tracking for that queue; terminal recovery and consumer registration remain follow-up work. This PR does not enable consumption or publish repair requests.
+An error returns to normal consumer retry. The next delivery resumes the cursor before advancing. Permanently failing cursor work blocks issue tracking for that queue; terminal recovery and consumer registration remain follow-up work. This PR does not enable consumption. The host must provide a fix publication route and a repair executor when registering the fix consumer.
 
 ## Analysis handoff
 
